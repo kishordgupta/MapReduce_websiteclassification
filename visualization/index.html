@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#divGraph{
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+}
+#swap:hover{
+
+}
+
+.x.axis path {
+  display: none;
+}
+
+</style>
+<body>
+	<div id="divGraph" ></div>
+	<div id="swap" style="margin-left: auto;margin-right: auto;text-align: center;">
+		<img src="swap.png" style="height: 30px;width: 30px;cursor: pointer;">
+	</div>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="jquery-3.4.0.min.js"></script>
+<script src="graph.js"></script>
+<script>
+	gdata = '';
+	temp = '';
+	s = "Train Size ";
+	c = 0;
+	cats = ["Neural Net","Random Forest","Decision Tree"];
+	ratios = [s+20+"%",s+30+"%",s+40+"%",s+50+"%",s+60+"%",s+70+"%",s+80+"%"];
+	dataByCls = [];
+	dataByRatio = [];
+	$(document).ready(function(){
+		initialize_graph_data();
+		showGraph(0,0);
+		$('#swap').click(function(){
+			c += 1;
+			load_graph(get_data());
+		});
+	});
+
+	function get_data(){
+		if(c%2 == 0)
+			return dataByRatio;
+		return dataByCls;
+
+	}
+
+	function initialize_graph_data(){
+		for(i=0;i<7;i++){
+		    byRatioObj = {"categorie": ratios[i] ,"values":[]};
+		    dataByRatio.push(byRatioObj);
+			for(j=0;j<3;j++){
+				dataByRatio[i].values.push({"value":0,"rate":cats[j]});
+			}
+		}
+
+		for(i=0;i<3;i++){
+		    byClsObj = {"categorie":cats[i],"values":[]};
+		    dataByCls.push(byClsObj);
+			for(j=0;j<7;j++){
+				dataByCls[i].values.push({"value":0,"rate":ratios[j]});
+			}
+		}
+	}
+
+	function showGraph(i,j){
+
+		if(j > 2){
+			i += 1;
+			j = 0;
+		}
+		if (i > 6)
+			return;
+		$.ajax({
+
+		    url : 'http://127.0.0.1:5000/NN',
+		    type : 'GET',
+		    data : {
+		        'ratio' : i,
+		        'j' : j
+		    },
+		    dataType:'json',
+		    success : function(data) {
+		    	fscore = data.fscore;
+		    	dataByCls[j].values[i].value = fscore;
+		    	dataByRatio[i].values[j].value = fscore;
+		    	j += 1;
+		    	setTimeout(function() {
+				 		    	load_graph(get_data());
+						    	showGraph(i,j);    
+				  }, 1);
+				            
+		    },
+		    error : function(request,error)
+		    {
+		        alert("Request: "+JSON.stringify(request));
+		    }
+		});
+	}
+
+</script>
